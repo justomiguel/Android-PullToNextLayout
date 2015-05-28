@@ -1,6 +1,7 @@
 package com.mingle.example;
 
 import android.content.Intent;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,23 +13,30 @@ public class MainActivity extends ActionBarActivity {
 
 
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
     }
 
 
     public void onClick(View view){
 
 
-       startActivity(new Intent(this,PullToNextLayoutDemoActivity.class));
+       startActivity(new Intent(this,ScrollViewActivity.class));
 
     }
     public void onClick2(View view){
 
+       startActivity(new Intent(this,WebViewActivity.class));
 
-       startActivity(new Intent(this,PullToNextLayoutDemoActivity.class));
+    }
+    public void onClick3(View view){
+
+       startActivity(new Intent(this,OtherActivity.class));
 
     }
 

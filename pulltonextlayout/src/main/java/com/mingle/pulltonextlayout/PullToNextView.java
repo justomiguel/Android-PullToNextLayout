@@ -12,11 +12,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
+import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.nineoldandroids.view.ViewHelper;
 
 
 /**
@@ -38,11 +40,16 @@ public class PullToNextView extends LinearLayout {
      */
     private ScrollView mScrollView;
 
+    /**
+     * webView
+     */
+    private WebView mWebView;
+
 
     private boolean isHashPrevious = true;
     private boolean isHashNext = true;
 
-    private PullStateE pullStateE = PullStateE.PULL_STATE_NONE;
+    private PullStateE mPullStateE = PullStateE.PULL_STATE_NONE;
 
 
     private View mFootView;
@@ -72,13 +79,12 @@ public class PullToNextView extends LinearLayout {
      * init
      */
     private void init() {
-        // 需要设置成vertical
+
         setOrientation(LinearLayout.VERTICAL);
         hiddenHeaderView();
 
     }
 
-    // 计算大小
     private void measureView(View child) {
         ViewGroup.LayoutParams p = child.getLayoutParams();
         if (p == null) {
@@ -106,7 +112,7 @@ public class PullToNextView extends LinearLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
 
-        hiddenFootVIew();
+        hiddenFootView();
         initContentAdapterView(this);
     }
 
@@ -118,16 +124,14 @@ public class PullToNextView extends LinearLayout {
     public void setContentView(ViewGroup view) {
 //       hiddenHeaderView();
         contentView = view;
-        //添加了内容控件.
         ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         addView(view, params);
-        //添加了脚部控件
-        hiddenFootVIew();
+        hiddenFootView();
         initContentAdapterView(contentView);
 
     }
 
-    private void hiddenFootVIew() {
+    private void hiddenFootView() {
         mFootView = LayoutInflater.from(getContext()).inflate(R.layout.pull_to_next_prompt_view, null);
         measureView(mFootView);
         mHeadViewHeight = mFootView.getMeasuredHeight();
@@ -149,7 +153,6 @@ public class PullToNextView extends LinearLayout {
 
         mHeadViewHeight = mHeaderView.getMeasuredHeight();
         addView(mHeaderView);
-        //隐藏了头部
         setHeaderTopMargin(-mHeadViewHeight);
     }
 
@@ -173,12 +176,10 @@ public class PullToNextView extends LinearLayout {
         if (contentView != null) {
 
 
-
             contentView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     Fragment f = fm.findFragmentByTag("position" + position);
-
 
 
                     FrameLayout frameLayout = (FrameLayout) contentView;
@@ -190,11 +191,8 @@ public class PullToNextView extends LinearLayout {
 
                     }
                 }
-            },20);
+            }, 20);
         }
-
-
-
 
 
     }
@@ -210,16 +208,17 @@ public class PullToNextView extends LinearLayout {
             if (o instanceof ScrollView) {
                 mScrollView = (ScrollView) o;
                 mScrollView.setOverScrollMode(OVER_SCROLL_NEVER);
+            } else if (o instanceof WebView) {
+                mWebView = (WebView) o;
+                mWebView.setOverScrollMode(OVER_SCROLL_NEVER);
             }
+
 
             for (int i = 0; i < vp.getChildCount(); i++) {
 
 
                 a(vp.getChildAt(i));
             }
-        } else {
-//            MLog.e(o);
-
         }
 
 
@@ -334,7 +333,7 @@ public class PullToNextView extends LinearLayout {
         ValueAnimator animator = ValueAnimator.ofFloat(topMargin, i);
         animator.setDuration(duration);
         animator.setInterpolator(new DecelerateInterpolator());
-        pullStateE = PullStateE.PULL_STATE_NONE;
+        mPullStateE = PullStateE.PULL_STATE_NONE;
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 
 
@@ -344,7 +343,7 @@ public class PullToNextView extends LinearLayout {
                 float temp = (Float) valueAnimator.getAnimatedValue();
 
                 if (temp == i) {
-                    pullStateE = PullStateE.PULL_STATE_NONE;
+                    mPullStateE = PullStateE.PULL_STATE_NONE;
                 }
                 setHeaderTopMargin((int) temp);
             }
@@ -357,13 +356,23 @@ public class PullToNextView extends LinearLayout {
         setHeaderTopMargin(-mHeadViewHeight);
         initContentView(fm, position);
 
+        ViewHelper.setAlpha(this, 1);
+        ViewHelper.setTranslationY(this, 0);
+        ViewHelper.setTranslationY(this, 0);
+        ViewHelper.setScaleX(this, 1);
+        ViewHelper.setScaleY(this, 1);
+        ViewHelper.setScrollX(this, 0);
+        ViewHelper.setScrollY(this, 0);
+        ViewHelper.setRotationX(this, 0);
+        ViewHelper.setRotationY(this, 0);
+
 
     }
 
-    //大于0 向下
+
     private boolean isRefreshViewScroll(int deltaY) {
 
-        if (PullStateE.PULL_STATE_REFRESH == pullStateE) {
+        if (PullStateE.PULL_STATE_REFRESH == mPullStateE) {
 
 
             return false;
@@ -376,18 +385,35 @@ public class PullToNextView extends LinearLayout {
 
             if (deltaY > 12 && mScrollView.getScrollY() == 0
                     ) {
-
-                pullStateE = PullStateE.PULL_STATE_DOWN;
-
+                // 向下
+                mPullStateE = PullStateE.PULL_STATE_DOWN;
                 return true;
             } else if (deltaY < -12 &&
 
                     child.getMeasuredHeight() <= contentView.getHeight() + mScrollView.getScrollY()) {
-
-
-                pullStateE = PullStateE.PULL_STATE_UP;
+                //向上
+                mPullStateE = PullStateE.PULL_STATE_UP;
                 return true;
             }
+        } else if (mWebView != null) {
+            if (deltaY > 12 && mWebView.getScrollY() == 0
+                    ) {
+                //向下
+                mPullStateE = PullStateE.PULL_STATE_DOWN;
+
+                return true;
+
+            } else if (deltaY < -12 &&
+                    (int) (mWebView.getContentHeight() * mWebView.getScale()) - mWebView.getHeight() - mWebView.getScrollY() == 0
+
+                    ) {
+                //向上
+
+                mPullStateE = PullStateE.PULL_STATE_UP;
+                return true;
+
+            }
+
         } else {
             return true;
         }
@@ -408,9 +434,9 @@ public class PullToNextView extends LinearLayout {
         LayoutParams params = (LayoutParams) mHeaderView.getLayoutParams();
         float newTopMargin = params.topMargin + deltaY * 0.5f;
 
-        if (pullStateE == PullStateE.PULL_STATE_UP) {
+        if (mPullStateE == PullStateE.PULL_STATE_UP) {
             newTopMargin = Math.min(newTopMargin, -mHeadViewHeight);
-        } else if (PullStateE.PULL_STATE_DOWN == pullStateE) {
+        } else if (PullStateE.PULL_STATE_DOWN == mPullStateE) {
             newTopMargin = Math.max(newTopMargin, -mHeadViewHeight);
         }
         params.topMargin = (int) newTopMargin;
@@ -419,14 +445,13 @@ public class PullToNextView extends LinearLayout {
         if (newTopMargin < -mHeadViewHeight) {
             //下一个
 
-
             if (!isHashNext) {
-                footPromptTV.setText("没有更多信息");
+                footPromptTV.setText(R.string.ptn_no_more_data);
             } else if (newTopMargin < -3 * mHeadViewHeight) {
 
-                footPromptTV.setText("放手查看下一个");
+                footPromptTV.setText(R.string.ptn_release_to_next);
             } else {
-                footPromptTV.setText("上拉查看下一个");
+                footPromptTV.setText(R.string.ptn_pull_up_to_next);
 
             }
 
@@ -435,12 +460,12 @@ public class PullToNextView extends LinearLayout {
 
             //前一个
             if (!isHashPrevious) {
-                headPromptTV.setText("已经是第一个了");
+                headPromptTV.setText(R.string.ptn_the_first);
             } else if (newTopMargin > mHeadViewHeight) {
 
-                headPromptTV.setText("放手查看前一个");
+                headPromptTV.setText(R.string.ptn_release_to_previous);
             } else {
-                headPromptTV.setText("下拉查看前一个");
+                headPromptTV.setText(R.string.ptn_pull_down_to_previous);
 
             }
 
